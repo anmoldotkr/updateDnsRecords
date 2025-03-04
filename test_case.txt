@@ -1,0 +1,82 @@
+{
+  "RequestType": "delete",
+  "parameters": {
+    "environment": "dev",
+    "product": "extv",
+    "service": "redis3",
+    "domainName": "mifadnetwork.com",
+    "region": "us-west-2"
+  }
+}
+
+------------------
+
+
+
+----------------- lambda permissions-------------
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "logs:CreateLogGroup",
+            "Resource": "arn:aws:logs:us-west-2:959585562641:*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+            ],
+            "Resource": [
+                "arn:aws:logs:us-west-2:959585562641:log-group:/aws/lambda/dev-extv-elasticache-onoff-lambda:*"
+            ]
+        },
+        {
+            "Sid": "testingcft",
+            "Effect": "Allow",
+            "Action": [
+                "cloudformation:DescribeStacks",
+                "cloudformation:CreateStack",
+                "cloudformation:DeleteStack",
+                "cloudformation:UpdateStack",
+                "lambda:InvokeFunction",
+                "elasticache:*",
+                "ec2:DescribeAccountAttributes"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+
+---------------shared-rivittv-permission----------------------
+
+
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "route53:ListHostedZones",
+                "route53:GetHostedZone",
+                "route53:ChangeResourceRecordSets"
+            ],
+            "Resource": "arn:aws:route53:::hostedzone/Z03401162QXJQRNQEVVYM"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "route53:GetHostedZone",
+                "route53:ChangeResourceRecordSets"
+            ],
+            "Resource": [
+                "arn:aws:route53:::hostedzone/Z00158963EK6V46RTVQ88",
+                "arn:aws:route53:::hostedzone/Z2D8AN82GI1RE9"
+            ]
+        }
+    ]
+}
+
+
+slcak = https://hooks.slack.com/services/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
