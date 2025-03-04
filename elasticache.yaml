@@ -97,6 +97,7 @@ Resources:
        Fn::Sub: ${environment}-${product}-route53-lambda
       recordName: !Sub ${environment}-${product}-${service}-ro.${domainName}
       recordValue: !GetAtt serviceRedisCluster.ReaderEndPoint.Address
+      domainName: !Ref domainName
 
 Outputs:
   redisClusterEndPoint:
