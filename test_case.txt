@@ -2,9 +2,9 @@
   "RequestType": "delete",
   "parameters": {
     "environment": "dev",
-    "product": "extv",
+    "product": "teting",
     "service": "redis3",
-    "domainName": "mifadnetwork.com",
+    "domainName": "example.com",
     "region": "us-west-2"
   }
 }
@@ -20,7 +20,7 @@
         {
             "Effect": "Allow",
             "Action": "logs:CreateLogGroup",
-            "Resource": "arn:aws:logs:us-west-2:959585562641:*"
+            "Resource": "arn:aws:logs:us-west-2:<AWS::ACCOUNT>:*"
         },
         {
             "Effect": "Allow",
@@ -29,7 +29,7 @@
                 "logs:PutLogEvents"
             ],
             "Resource": [
-                "arn:aws:logs:us-west-2:959585562641:log-group:/aws/lambda/dev-extv-elasticache-onoff-lambda:*"
+                "arn:aws:logs:us-west-2:<AWS::ACCOUNT>:log-group:/aws/lambda/dev-extv-elasticache-onoff-lambda:*"
             ]
         },
         {
@@ -49,7 +49,7 @@
     ]
 }
 
----------------shared-rivittv-permission----------------------
+---------------shared-permission----------------------
 
 
 {
@@ -62,7 +62,7 @@
                 "route53:GetHostedZone",
                 "route53:ChangeResourceRecordSets"
             ],
-            "Resource": "arn:aws:route53:::hostedzone/Z03401162QXJQRNQEVVYM"
+            "Resource": "arn:aws:route53:::hostedzone/<hostedZoneId>"
         },
         {
             "Effect": "Allow",
@@ -71,12 +71,12 @@
                 "route53:ChangeResourceRecordSets"
             ],
             "Resource": [
-                "arn:aws:route53:::hostedzone/Z00158963EK6V46RTVQ88",
-                "arn:aws:route53:::hostedzone/Z2D8AN82GI1RE9"
+                "arn:aws:route53:::hostedzone/<hostedZoneId>",
+                "arn:aws:route53:::hostedzone/<hostedZoneId>"
             ]
         }
     ]
 }
 
 
-slcak = https://hooks.slack.com/services/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
+slcak = ""
