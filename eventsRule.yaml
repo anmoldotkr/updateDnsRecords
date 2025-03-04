@@ -1,0 +1,91 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Lambda function with a CloudWatch Events rule to trigger based on a parameterized schedule
+Parameters:
+  environment:
+    Type: String
+  product:
+    Type: String
+  service:
+    Type: String
+  domainName:
+    Type: String
+
+
+Resources:
+  deletingStackEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub ${environment}-${product}-deleteElasticache-lambda-event-rule
+      ScheduleExpression: cron(25 18 ? * 6 *)
+      State: ENABLED
+      EventBusName: default
+      Targets:
+        - Arn:
+            Fn::ImportValue: !Sub "${environment}-${product}-elasticacheOnOffService-lambda"
+          Id: 'lambdaFunctionTarget'
+          Input: !Sub |
+            {
+              "detail": {
+                "RequestType": "delete",
+                "parameters": {
+                  "environment": "${environment}",
+                  "product": "${product}",
+                  "service": "redis",
+                  "domainName": "${domainName}"
+                }
+              }
+            }
+  elasticacheDeletPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Fn::ImportValue: !Sub "${environment}-${product}-elasticacheOnOffService-lambda"
+      Action: 'lambda:InvokeFunction'
+      Principal: 'events.amazonaws.com'
+      SourceArn: !GetAtt deletingStackEventRule.Arn
+
+  creatingStackEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub ${environment}-${product}-createElasticache-lambda-event-rule
+      ScheduleExpression: cron(30 23 ? * SUN *)
+      State: ENABLED
+      EventBusName: default
+      Targets:
+        - Arn:
+            Fn::ImportValue: !Sub "${environment}-${product}-elasticacheOnOffService-lambda"
+          Id: 'lambdaFunctionTarget'
+          Input: !Sub |
+            {
+              "detail": {
+                "RequestType": "create",
+                "parameters": {
+                  "environment": "${environment}",
+                  "product": "${product}",
+                  "service": "redis",
+                  "domainName": "${domainName}"
+                }
+              }
+            }
+  elasticacheCreatePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Fn::ImportValue: !Sub ${environment}-${product}-elasticacheOnOffService-lambda
+      Action: 'lambda:InvokeFunction'
+      Principal: 'events.amazonaws.com'
+      SourceArn: !GetAtt creatingStackEventRule.Arn
+
+Outputs:
+  deletingStackEventRuleArn:
+    Description: The ARN of the EventBridge Rule
+    Value: 
+      Fn::GetAtt: 
+        - deletingStackEventRule
+        - Arn
+  creatingStackEventRuleArn:
+    Description: The ARN of the EventBridge Rule
+    Value: 
+      Fn::GetAtt: 
+        - creatingStackEventRule
+        - Arn

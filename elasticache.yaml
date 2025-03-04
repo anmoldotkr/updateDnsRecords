@@ -1,0 +1,116 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Redis cluster
+Parameters:
+  environment:
+    Description: Name of the environment for this stack.
+    Type: String
+    AllowedValues:
+      - dev
+      - qa
+      - stage
+      - prod
+  product:
+    Type: String
+  service:
+    Type: String
+    Default: redis
+  domainName:
+    Type: String
+  region:
+    Type: String
+
+Mappings:
+  dev:
+    us-west-2:
+      privAzone1: us-west-2a
+      privAzone2: us-west-2b
+      instanceType: cache.t3.small
+      desiredSize: 2
+  qa:
+    us-west-2:
+      privAzone1: us-west-2a
+      privAzone2: us-west-2b
+      instanceType: cache.t3.small
+      desiredSize: 2
+  stage:
+    us-west-2:
+      privAzone1: us-west-2a
+      privAzone2: us-west-2b
+      instanceType: cache.t3.small
+      desiredSize: 3
+  prod:
+    us-west-2:
+      privAzone1: us-west-2a
+      privAzone2: us-west-2b
+      instanceType: cache.t3.medium
+      desiredSize: 2
+Resources:
+  serviceRedis:
+    Type: 'AWS::ElastiCache::SubnetGroup'
+    Properties:
+      CacheSubnetGroupName: !Sub '${environment}-${product}-${service}'
+      Description: service Redis Cache Subnet Group
+      SubnetIds:
+        - !ImportValue 
+          'Fn::Sub': '${environment}-${product}-vpc-private-subnet-a'
+        - !ImportValue 
+          'Fn::Sub': '${environment}-${product}-vpc-private-subnet-b'
+  serviceRedisCluster:
+    Type: 'AWS::ElastiCache::ReplicationGroup'
+    Properties:
+      ReplicationGroupDescription: Redis Cluster
+      CacheSubnetGroupName: !Ref serviceRedis
+      Engine: redis
+      CacheNodeType: !FindInMap 
+        - !Ref environment
+        - !Ref region
+        - instanceType
+      NumCacheClusters: !FindInMap 
+        - !Ref environment
+        - !Ref region
+        - desiredSize
+      PreferredCacheClusterAZs:
+        - !FindInMap 
+          - !Ref environment
+          - !Ref 'AWS::Region'
+          - privAzone1
+        - !FindInMap 
+          - !Ref environment
+          - !Ref 'AWS::Region'
+          - privAzone2
+      AutomaticFailoverEnabled: false
+      SecurityGroupIds:
+        - !ImportValue 
+          'Fn::Sub': '${environment}-${product}-vpc-generalSG'
+  updateRoute53OnShared:
+    Type: "Custom::DnsExternalRoute53"
+    Properties:
+      ServiceToken: !ImportValue
+       Fn::Sub: ${environment}-${product}-route53-lambda
+      recordName: !Sub ${environment}-${product}-${service}.${domainName}
+      recordValue: !GetAtt serviceRedisCluster.PrimaryEndPoint.Address
+
+  updateRoute53OnSharedReadOnly:
+    Type: "Custom::DnsExternalRoute53"
+    Properties:
+      ServiceToken: !ImportValue
+       Fn::Sub: ${environment}-${product}-route53-lambda
+      recordName: !Sub ${environment}-${product}-${service}-ro.${domainName}
+      recordValue: !GetAtt serviceRedisCluster.ReaderEndPoint.Address
+
+Outputs:
+  redisClusterEndPoint:
+    Description: The DNS Name Of Primary Read/Write Node
+    Value: !GetAtt 
+      - serviceRedisCluster
+      - PrimaryEndPoint.Address
+  redisClusterReadEndPoint:
+    Description: The DNS Name Of Primary Read/Write Node
+    Value: !GetAtt 
+      - serviceRedisCluster
+      - ReaderEndPoint.Address
+  redisClusterName:
+    Description: The ElastiCache Redis Cluster Name
+    Value: !Ref serviceRedisCluster
+  
+

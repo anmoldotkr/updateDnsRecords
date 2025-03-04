@@ -1,0 +1,65 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: All The Lambdas
+Parameters:
+  environment:
+    Description: Name of the environment for this stack.
+    Type: String
+    AllowedValues:
+      - dev
+      - qa
+      - stage
+      - prod
+      - shared
+      - pre-prod
+  product:
+    Type: String
+  service:
+    Type: String
+    Default: lambdas
+
+elasticacheOnOffServiceLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${environment}-${product}-${service}-elasticacheOnOffService-Role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service:
+                - 'lambda.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Sub ${environment}-${product}-${service}-elasticacheOnOffService-execution-policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                - "cloudformation:DescribeStacks"
+                - "cloudformation:CreateStack"
+                - "cloudformation:DeleteStack"
+                - "cloudformation:UpdateStack"
+                - "lambda:InvokeFunction"
+                - "elasticache:*"
+                - "ec2:DescribeAccountAttributes"
+                Resource: "*"
+  
+  elasticacheOnOffServiceLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ${environment}-${product}-elasticacheOnOffService-lambda
+      Code:
+        S3Bucket:
+          Fn::If:
+            - isRivittv
+            - !Sub '${environment}-${product}-lambdas'
+            - !Sub '${environment}-${product}-lambda'
+        S3Key: onoffElasticache.zip
+      Handler: index.lambda_handler
+      Role: !GetAtt elasticacheOnOffServiceLambdaRole.Arn
+      Runtime: python3.11
+      Timeout: 900
+      MemorySize: 1024
+
